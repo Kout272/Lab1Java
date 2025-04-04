@@ -1,5 +1,6 @@
 package com.example.mylab.service;
 
+import com.example.mylab.cache.CountryCache;
 import com.example.mylab.model.Country;
 import com.example.mylab.model.Person;
 import com.example.mylab.repository.CountryRepository;
@@ -9,6 +10,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.PostConstruct;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,9 +25,13 @@ public class CountryService {
     @Autowired
     private PersonService personService;
 
+    @Autowired
+    private CountryCache countryCache;
+
     private List<Country> countryList;
 
-    public CountryService() {
+    @PostConstruct
+    public void init() {
         countryList = new ArrayList<>();
         loadCountryCodes();
     }
@@ -42,6 +48,8 @@ public class CountryService {
                     String countryCode = columns.get(2).text();
                     Person person = null;
                     countryList.add(new Country(countryName, countryCode, person));
+                    // Заполняем кэш при загрузке
+                    countryCache.putCountryCode(countryName, countryCode);
                 }
             }
         } catch (IOException e) {
@@ -50,17 +58,39 @@ public class CountryService {
     }
 
     public String getCodeByCountry(String countryName) {
+        // Сначала проверяем кэш
+        String cachedCode = countryCache.getCodeByCountry(countryName);
+        if (cachedCode != null) {
+            return cachedCode;
+        }
+
+        // Если нет в кэше, ищем в списке и обновляем кэш
         return countryList.stream()
                 .filter(country -> country.getName().equalsIgnoreCase(countryName))
-                .map(Country::getCode)
+                .map(country -> {
+                    String code = country.getCode();
+                    countryCache.putCountryCode(countryName, code);
+                    return code;
+                })
                 .findFirst()
                 .orElse(null);
     }
 
     public String getCountryByCode(String code) {
+        // Сначала проверяем кэш
+        String cachedCountry = countryCache.getCountryByCode(code);
+        if (cachedCountry != null) {
+            return cachedCountry;
+        }
+
+        // Если нет в кэше, ищем в списке и обновляем кэш
         return countryList.stream()
                 .filter(country -> country.getCode().equals(code))
-                .map(Country::getName)
+                .map(country -> {
+                    String name = country.getName();
+                    countryCache.putCountryCode(name, code);
+                    return name;
+                })
                 .findFirst()
                 .orElse(null);
     }
@@ -68,7 +98,6 @@ public class CountryService {
     public List<Country> getAllCountries() {
         return countryList;
     }
-
 
     public List<Country> findAll() {
         return repository.findAll();
@@ -84,7 +113,7 @@ public class CountryService {
             country.setPerson(person.get());
             return repository.save(country);
         }
-        return null; // Или выбросьте исключение, если персона не найдена
+        return null;
     }
 
     public Country update(Integer id, Country countryDetails) {

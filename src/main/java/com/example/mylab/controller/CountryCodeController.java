@@ -6,6 +6,7 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.mylab.cache.CountryCache;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,9 @@ import java.util.Optional;
 public class CountryCodeController {
     @Autowired
     private CountryService countryService;
+
+    @Autowired
+    private CountryCache countryCache;
 
     @GetMapping("/code/{countryName}")
     public String getCode(@PathVariable String countryName) {
@@ -55,5 +59,16 @@ public class CountryCodeController {
     public ResponseEntity<Void> deleteCountry(@PathVariable Integer id) {
         countryService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/cache/size")
+    public int getCacheSize() {
+        return countryCache.getCacheSize();
+    }
+
+    @PostMapping("/cache/clear")
+    public ResponseEntity<Void> clearCache() {
+        countryCache.clearCache();
+        return ResponseEntity.ok().build();
     }
 }

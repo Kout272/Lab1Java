@@ -40,4 +40,8 @@ public class PersonService {
     public void delete(Integer id) {
         repository.deleteById(id);
     }
+
+    public List<Person> findByCountryName(String countryName) {
+        return repository.findPersonsByCountryName(countryName);
+    }
 }

@@ -43,4 +43,13 @@ public class PersonController {
         personService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/by-country")
+    public ResponseEntity<List<Person>> getPersonsByCountry(@RequestParam String country) {
+        List<Person> persons = personService.findByCountryName(country);
+        if (persons.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(persons);
+    }
 }
