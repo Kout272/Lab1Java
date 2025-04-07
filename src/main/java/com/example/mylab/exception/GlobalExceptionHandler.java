@@ -12,7 +12,10 @@ import org.slf4j.LoggerFactory;
 public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+<<<<<<< HEAD
     // Обработка 400 (Bad Request)
+=======
+>>>>>>> 72d08c2 (lab4)
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleBadRequest(Exception ex, WebRequest request) {
         logger.error("400 Error: {}", ex.getMessage());
