@@ -1,20 +1,16 @@
 package com.example.mylab.exception;
 
-<<<<<<< HEAD
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
-=======
 
->>>>>>> 72d08c2 (lab4)
 public class ErrorResponse {
     private int status;
     private String error;
     private String message;
-<<<<<<< HEAD
-=======
+
 
     public ErrorResponse() {
     }
@@ -48,5 +44,4 @@ public class ErrorResponse {
     public void setMessage(String message) {
         this.message = message;
     }
->>>>>>> 72d08c2 (lab4)
 }
