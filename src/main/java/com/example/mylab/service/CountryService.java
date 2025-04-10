@@ -1,4 +1,3 @@
-// CountryService.java
 package com.example.mylab.service;
 
 import com.example.mylab.cache.CountryCache;
@@ -35,6 +34,13 @@ public class CountryService {
     public void init() {
         countryList = new ArrayList<>();
         loadCountryCodes();
+        loadDatabaseCountriesToCache();
+    }
+
+    private void loadDatabaseCountriesToCache() {
+        repository.findAll().forEach(country -> {
+            countryCache.putCountryWithId(country.getId(), country.getName(), country.getCode());
+        });
     }
 
     private void loadCountryCodes() {
@@ -71,7 +77,12 @@ public class CountryService {
                     return code;
                 })
                 .findFirst()
-                .orElse(null);
+                .orElseGet(() -> {
+                    Optional<Country> dbCountry = repository.findByName(countryName);
+                    dbCountry.ifPresent(country ->
+                            countryCache.putCountryCode(countryName, country.getCode()));
+                    return dbCountry.map(Country::getCode).orElse(null);
+                });
     }
 
     public String getCountryByCode(String code) {
@@ -88,78 +99,61 @@ public class CountryService {
                     return name;
                 })
                 .findFirst()
-                .orElse(null);
+                .orElseGet(() -> {
+                    Optional<Country> dbCountry = repository.findByCode(code);
+                    dbCountry.ifPresent(country ->
+                            countryCache.putCountryCode(country.getName(), code));
+                    return dbCountry.map(Country::getName).orElse(null);
+                });
+    }
+
+    public List<Country> getAllCountries() {
+        List<Country> allCountries = new ArrayList<>(countryList);
+        allCountries.addAll(repository.findAll());
+        return allCountries;
     }
 
     public List<Country> findAll() {
-        List<Country> countries = repository.findAll();
-        // Обновляем кэш для всех загруженных стран
-        countries.forEach(country -> {
-            if (country.getName() != null && country.getCode() != null) {
-                countryCache.putCountryCode(country.getName(), country.getCode());
-            }
-        });
-        return countries;
+        return repository.findAll();
     }
 
     public Optional<Country> findById(Integer id) {
-        Optional<Country> country = repository.findById(id);
-        country.ifPresent(c -> {
-            if (c.getName() != null && c.getCode() != null) {
-                countryCache.putCountryCode(c.getName(), c.getCode());
-            }
+        return repository.findById(id).map(country -> {
+            countryCache.putCountryWithId(country.getId(), country.getName(), country.getCode());
+            return country;
         });
-        return country;
     }
 
     public Country create(Country country, Integer personId) {
         Optional<Person> person = personService.findById(personId);
         if (person.isPresent()) {
             country.setPerson(person.get());
-            Country created = repository.save(country);
-            if (created.getName() != null && created.getCode() != null) {
-                countryCache.putCountryCode(created.getName(), created.getCode());
-            }
-            return created;
+            Country savedCountry = repository.save(country);
+            countryCache.putCountryWithId(savedCountry.getId(), savedCountry.getName(), savedCountry.getCode());
+            return savedCountry;
         }
         return null;
     }
 
     public Country update(Integer id, Country countryDetails) {
-        return repository.findById(id)
-                .map(existingCountry -> {
-                    // Удаляем старые значения из кэша
-                    if (existingCountry.getName() != null) {
-                        countryCache.removeByCountry(existingCountry.getName());
-                    }
-                    if (existingCountry.getCode() != null) {
-                        countryCache.removeByCode(existingCountry.getCode());
-                    }
+        Optional<Country> optionalCountry = repository.findById(id);
+        if (optionalCountry.isPresent()) {
+            Country country = optionalCountry.get();
+            countryCache.removeById(country.getId());
 
-                    // Обновляем страну
-                    existingCountry.setName(countryDetails.getName());
-                    existingCountry.setCode(countryDetails.getCode());
+            country.setName(countryDetails.getName());
+            country.setCode(countryDetails.getCode());
 
-                    Country updated = repository.save(existingCountry);
-
-                    // Добавляем новые значения в кэш
-                    if (updated.getName() != null && updated.getCode() != null) {
-                        countryCache.putCountryCode(updated.getName(), updated.getCode());
-                    }
-                    return updated;
-                })
-                .orElse(null);
+            Country updatedCountry = repository.save(country);
+            countryCache.putCountryWithId(updatedCountry.getId(), updatedCountry.getName(), updatedCountry.getCode());
+            return updatedCountry;
+        }
+        return null;
     }
 
     public void delete(Integer id) {
         repository.findById(id).ifPresent(country -> {
-            // Удаляем из кэша перед удалением из БД
-            if (country.getName() != null) {
-                countryCache.removeByCountry(country.getName());
-            }
-            if (country.getCode() != null) {
-                countryCache.removeByCode(country.getCode());
-            }
+            countryCache.removeById(country.getId());
             repository.deleteById(id);
         });
     }

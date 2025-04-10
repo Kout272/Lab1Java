@@ -31,7 +31,6 @@ public class PersonService {
             Person person = optionalPerson.get();
             person.setName(personDetails.getName());
             person.setSurname(personDetails.getSurname());
-            // Здесь можно обновить другие поля, если нужно
             return repository.save(person);
         }
         return null;

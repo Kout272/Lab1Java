@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,8 +19,11 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Country API", description = "Управление странами и кодами стран")
 public class CountryCodeController {
-    private final CountryService countryService;
-    private final CountryCache countryCache;
+
+    @Autowired
+    private CountryService countryService;
+
+    private CountryCache countryCache;
 
     @Operation(summary = "Получить код страны по названию",
             responses = {
