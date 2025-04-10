@@ -11,7 +11,6 @@ import java.util.List;
 @Repository
 public interface PersonRepository extends JpaRepository<Person,Integer>
 {
-    // Кастомный запрос для поиска людей по стране (через вложенную сущность Country)
     @Query("SELECT p FROM Person p JOIN p.countries c WHERE c.name = :countryName")
     List<Person> findPersonsByCountryName(@Param("countryName") String countryName);
 }
